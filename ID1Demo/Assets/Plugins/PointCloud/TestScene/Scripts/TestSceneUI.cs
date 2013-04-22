@@ -33,6 +33,7 @@ public class TestSceneUI : MonoBehaviour {
 	public float ButtonHeight {get; set;}
 	
 	private string modeButtonLabel;
+	private string recordButtonLabel;
 
 	void Start()
 	{	
@@ -47,6 +48,7 @@ public class TestSceneUI : MonoBehaviour {
 		initBoxTexCoords = new Rect(1f/512f, (511f-289f)/512f, 429f/512f, 289f/512f);
 		
 		modeButtonLabel = "";
+		recordButtonLabel = "Record";
 		
 		current_mode = mode.UNKOWN;
 		
@@ -136,11 +138,24 @@ public class TestSceneUI : MonoBehaviour {
 	{	
 		GUILayout.BeginArea(guiArea);
 		GUILayout.BeginHorizontal();
-		if (GUILayout.Button("Reset", GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/2)))
+		if (GUILayout.Button (recordButtonLabel, GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3))) {
+			if (recordButtonLabel == "Record")
+			{
+				Kamcord.StartRecording();
+				recordButtonLabel = "Stop";
+			}
+			else
+			{
+				Kamcord.StopRecording();
+				Kamcord.ShowView();
+				recordButtonLabel = "Record";
+			}
+		}
+		else if (GUILayout.Button("Reset", GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3)))
 		{
 			PointCloudBehaviour.Instance.Reset();
 		}
-		else if (GUILayout.Button(modeButtonLabel, GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/2)))
+		else if (GUILayout.Button(modeButtonLabel, GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3)))
 		{
 			NextMode();
 		}
