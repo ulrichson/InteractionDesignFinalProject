@@ -162,9 +162,9 @@ public class TestSceneUI : MonoBehaviour {
 		GUILayout.EndHorizontal();
 		GUILayout.EndArea();
 		
-		GUI.DrawTextureWithTexCoords(headerBackgroundRect, ui, headerBackgroundTexCoords);
-		GUI.DrawTextureWithTexCoords(headerRect, ui, headerTexCoords);
-		GUI.DrawTexture(logoRect, pointCloudLogo);
+		// GUI.DrawTextureWithTexCoords(headerBackgroundRect, ui, headerBackgroundTexCoords);
+		// GUI.DrawTextureWithTexCoords(headerRect, ui, headerTexCoords);
+		// GUI.DrawTexture(logoRect, pointCloudLogo);
 			
 		if(draw_init)
 		{
