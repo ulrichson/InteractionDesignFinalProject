@@ -11,12 +11,13 @@ using System.Collections;
  
 public class SunLight: MonoBehaviour {
  
-    public float DayOfTheYear = 250;
+	public bool useRealTime = true;
+    public float dayOfTheYear = 250;
     public float latitude = 0f;
     public float longitude = 0f;
     public float domeRadius = 0f;
-    public float updateTime = 5.0f;
-    public float timeWarp = 180.0f;
+    // public float updateTime = 5.0f;
+    // public float timeWarp = 180.0f;
     public float timeOfTheDay = 12.0f;
 	public float sceneOrientation = 0.0f;
  
@@ -27,14 +28,16 @@ public class SunLight: MonoBehaviour {
  
 	void Update () {
  
+	   if (useRealTime) {
+			dayOfTheYear = DateTime.Now.DayOfYear;
+			timeOfTheDay = DateTime.Now.Hour;
+		}
+		
        setLatitude();
        setDay();
-       // maingui MG = (maingui)GameObject.Find("mainManager").GetComponent(typeof(maingui));
-       // timeOfTheDay = 15; //MG.hourValue;
-       // DayOfTheYear = 22; //MG.dayOftheyear;
        setTimeOfDay();
  
-       solarDeclination = calculateSolarDiclination(DayOfTheYear);
+       solarDeclination = calculateSolarDiclination(dayOfTheYear);
        sunnyTime = calculateSunnyTime(latitude, solarDeclination);
        setSunPosition(timeOfTheDay);
        updateSunLightColor(timeOfTheDay);
@@ -49,15 +52,15 @@ public class SunLight: MonoBehaviour {
         sinSolarDeclination = Mathf.Sin(solarDeclination);
         cosSolarDeclination = Mathf.Cos(solarDeclination);
  
-        solarTime = time + (0.170f * Mathf.Sin(4f * Mathf.PI * (DayOfTheYear - 80f) / 373f) -
-            0.129f * Mathf.Sin(2 * Mathf.PI * (DayOfTheYear - 8f) / 355f)) + (stdMeridian - longitude) / 15;
+        solarTime = time + (0.170f * Mathf.Sin(4f * Mathf.PI * (dayOfTheYear - 80f) / 373f) -
+            0.129f * Mathf.Sin(2 * Mathf.PI * (dayOfTheYear - 8f) / 355f)) + (stdMeridian - longitude) / 15;
  
  
         solarAltitude = Mathf.Asin(sinLatitude * sinSolarDeclination - cosLatitude * cosSolarDeclination * Mathf.Cos(Mathf.PI * solarTime / sunnyTime));
  
         opp = -cosSolarDeclination * Mathf.Sin(Mathf.PI * solarTime / sunnyTime);
         adj = (cosLatitude * sinSolarDeclination + sinLatitude * cosSolarDeclination * Mathf.Cos(Mathf.PI * solarTime / sunnyTime));
-        solarAzimuth = Mathf.Atan2(opp, adj);
+        solarAzimuth = Mathf.Atan2(opp, adj) + (360 + sceneOrientation) * Mathf.Deg2Rad;
  
         if (solarAltitude > 0.0f)
         {
@@ -111,10 +114,12 @@ public class SunLight: MonoBehaviour {
         latitude = Mathf.Clamp(latitude, -90.0f, 90.0f);
         latitudeInRadian = Mathf.Deg2Rad * latitude;
     }
+	
     void setDay()
     {
-        this.DayOfTheYear = Mathf.Clamp(DayOfTheYear, 0.0f, 365f);
+        this.dayOfTheYear = Mathf.Clamp(dayOfTheYear, 0.0f, 365f);
     }
+	
     void setTimeOfDay()
     {
         this.timeOfTheDay = Mathf.Clamp(timeOfTheDay, 8f, 23f);
