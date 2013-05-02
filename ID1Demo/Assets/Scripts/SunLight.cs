@@ -10,6 +10,8 @@ using System.Collections;
 ///////////////////////////////////////
  
 public class SunLight: MonoBehaviour {
+	
+	public static SunLight Instance;
  
 	public bool useRealTime = true;
     public float dayOfTheYear = 250;
@@ -25,6 +27,11 @@ public class SunLight: MonoBehaviour {
     private Vector3 sunDirection = new Vector3();
     private Vector3 sunPosition = new Vector3();
     private float latitudeInRadian, solarDeclination, sunnyTime, phiSun, thetaSun;
+	
+	void Awake ()
+	{
+		Instance = this;
+	}
  
 	void Update () {
  
