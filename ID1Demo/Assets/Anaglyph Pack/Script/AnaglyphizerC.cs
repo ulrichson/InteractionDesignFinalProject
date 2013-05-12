@@ -32,35 +32,34 @@ using System.Collections;
 
 public class AnaglyphizerC : MonoBehaviour
 {
-	public static AnaglyphizerC Instance;
+	public Texture2D texture;
 	
-	private		RenderTexture 		leftEyeRT;
-	private 	RenderTexture		rightEyeRT;
-	private		GameObject	 		leftEye;
-	private		GameObject	 		rightEye;
-	public 		Material	 		anaglyphMat;
-	internal	float		 		zvalue = 0.0f; // original: 1.0
-
-
-	public		bool 		enableKeys = true;
-	public		KeyCode 	downEyeDistance = KeyCode.O;
-	public		KeyCode 	upEyeDistance = KeyCode.P;
-	public		KeyCode 	downFocalDistance = KeyCode.K;
-	public		KeyCode 	upFocalDistance = KeyCode.L;
-	public		bool		useProjectionMatrix = false;
-	public		bool		useSideBySide = true;
-
-
-
-
+	public static AnaglyphizerC Instance;
+	private	RenderTexture leftEyeRT;
+	private RenderTexture rightEyeRT;
+	private	GameObject leftEye;
+	private	GameObject rightEye;
+	public Material anaglyphMat;
+	internal float zvalue = 0.0f; // original: 1.0
+	private	bool hasPointCloudBehaviour = false;
+	public	bool enableKeys = true;
+	public	KeyCode downEyeDistance = KeyCode.O;
+	public	KeyCode upEyeDistance = KeyCode.P;
+	public	KeyCode downFocalDistance = KeyCode.K;
+	public	KeyCode upFocalDistance = KeyCode.L;
+	public	bool useProjectionMatrix = false;
+	public	bool useSideBySide = true;
+	public	bool useHasbroMy3D = false;
+	public static Rect leftViewPort = new Rect (0.0f, 0.0f, 0.4685f, 1.0f);
+	public static Rect rightViewPort = new Rect (0.529f, 0.0f, 0.4685f, 1.0f);
 
 	public class S3DV
 	{
-		internal static	float	 eyeDistance = 0.02f;
-		internal static	float	focalDistance = 10f;
+		internal static	float eyeDistance = 0.02f;
+		internal static	float focalDistance = 10f;
 	};
 	
-	void Awake()
+	void Awake ()
 	{
 		Instance = this;
 	}
@@ -104,8 +103,12 @@ public class AnaglyphizerC : MonoBehaviour
 			camera.backgroundColor = new Color (0f, 0f, 0f, 0f);
 			camera.clearFlags = CameraClearFlags.Nothing;
 		} else {
-			leftEye.camera.rect = new Rect (0.0f, 0.0f, 0.5f, 1.0f);
-			rightEye.camera.rect = new Rect (0.5f, 0.0f, 1.0f, 1.0f);
+			if (!useHasbroMy3D) {
+				leftViewPort = new Rect (0.0f, 0.0f, 0.5f, 1.0f);
+				rightViewPort = new Rect (0.5f, 0.0f, 1.0f, 1.0f);
+			}
+			leftEye.camera.rect = leftViewPort;
+			rightEye.camera.rect = rightViewPort;
 		}
 	
 		leftEye.transform.position = transform.position + transform.TransformDirection (-S3DV.eyeDistance, 0f, 0f);
@@ -124,6 +127,18 @@ public class AnaglyphizerC : MonoBehaviour
 
 		leftEye.transform.parent = transform;
 		rightEye.transform.parent = transform;
+		
+		hasPointCloudBehaviour = GetComponent<PointCloudBehaviour> () != null;
+		Debug.Log (hasPointCloudBehaviour ? "PointCloudBehaviour is attached to camera." : "PointCloudBehaviour is not attached to camera.");
+		if (hasPointCloudBehaviour) {
+			PointCloudVideoTexture lpcvt = leftEye.AddComponent<PointCloudVideoTexture> ();
+			PointCloudVideoTexture rpcvt = rightEye.AddComponent<PointCloudVideoTexture> ();
+			lpcvt.view = PointCloudVideoTexture.View.Left;
+			lpcvt.texture = texture;
+			rpcvt.view = PointCloudVideoTexture.View.Right;
+			rpcvt.texture = texture;
+			PointCloudBehaviour.Instance.camera.enabled = false;
+		}
 	}
 
 	void Stop ()

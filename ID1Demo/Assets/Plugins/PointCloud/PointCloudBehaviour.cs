@@ -181,7 +181,7 @@ public class PointCloudBehaviour : MonoBehaviour {
 						break;
 				}
 			}
-			
+			RenderTexture.active = camera.targetTexture;
 			GL.PushMatrix();
 	    	GL.LoadPixelMatrix();
 			switch(Screen.orientation)
@@ -203,7 +203,8 @@ public class PointCloudBehaviour : MonoBehaviour {
 					break;
 			}
 			Graphics.DrawTexture(screenRect, videoTexture, videoTextureCoordinates, 0, 0, 0, 0);
-			GL.PopMatrix();	
+			GL.PopMatrix();
+			RenderTexture.active = null;
 		}
 		
 		MonitorStateChanges();

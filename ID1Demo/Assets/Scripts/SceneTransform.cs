@@ -8,7 +8,7 @@ public class SceneTransform : MonoBehaviour
 	public Vector3 position = Vector3.zero;
 	public Vector3 rotation = Vector3.zero;
 	public float scale = 1.0f;
-	public float positionSensitivity = 10.0f;
+	public float positionSensitivity = 0.01f;
 	
 	void Awake ()
 	{

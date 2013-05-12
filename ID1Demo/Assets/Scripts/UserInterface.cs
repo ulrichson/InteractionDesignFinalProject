@@ -3,7 +3,7 @@ using System.Collections;
 
 public class UserInterface : MonoBehaviour {
 
-private enum mode {
+	private enum mode {
 		UNKOWN,
 		SLAM,
 		IMAGE_TRACKING,
@@ -12,13 +12,26 @@ private enum mode {
 	
 	mode current_mode;
 	
+	public Texture2D pointCloudLogo;
 	public Texture2D ui;
+	
+	public RenderTexture renderTextureLeftEye;
+	public RenderTexture renderTextureRightEye;
+	
+	public bool useHasbroMy3D = true;
+	
+	Rect logoRect;
+	Rect headerRect;
+	Rect headerTexCoords;
+	Rect headerBackgroundRect;
+	Rect headerBackgroundTexCoords;
 	private int arrowOffset;
 	Rect initBoxRect;
 	Rect initBoxTexCoords;
 	Rect initArrowRect;
 	Rect initArrowTexCoords;
 	float scale = 1f;
+	float highres_scale = 0.5f;
 	bool draw_init;
 	
 	const float buttonHeightNormalized = 0.1f;
@@ -27,15 +40,25 @@ private enum mode {
 	
 	private string modeButtonLabel;
 	private string recordButtonLabel;
+	private bool toggle3dStereoVision = true;
+	
+	public static Rect leftViewPort = new Rect (0.0f, 0.0f, 0.4685f, 1.0f);
+	public static Rect rightViewPort = new Rect (0.529f, 0.0f, 0.4685f, 1.0f);
+	
+	float screenRatio = 0.0f;
 	
 	bool showGUI = true;
-
+	
 	void Start()
 	{	
 		guiArea = new Rect(0, Screen.height * (1f - buttonHeightNormalized), Screen.width, Screen.height * buttonHeightNormalized);
 		ButtonHeight = Screen.height * buttonHeightNormalized;
 		
 		scale = Mathf.Min(Screen.height, Screen.width)/768f;
+		highres_scale = 0.5f * scale;
+		
+		headerBackgroundTexCoords = new Rect(1f/512f, 1f-(332f+60f)/512f, 24f/512f, 60f/512f);
+		headerTexCoords = new Rect(1f/512f, 1f-(289+37)/512f, 282f/512f, 36f/512f);
 		initBoxTexCoords = new Rect(1f/512f, (511f-289f)/512f, 429f/512f, 289f/512f);
 		
 		modeButtonLabel = "";
@@ -49,6 +72,8 @@ private enum mode {
 	
 	void Update() {
 		
+		headerBackgroundRect = new Rect(0, 0, Screen.width, scale * 60f);
+		headerRect = new Rect((int)((Screen.width-scale * 283f)/2f), (int)(scale * (60-36)/2), (int)(scale * 283f), (int)(scale * 36f));
 		int initBoxWidth = (int)(scale * 429);
 		int initBoxHeight = (int)(scale * 289);
 		initBoxRect = new Rect((Screen.width-initBoxWidth)/2, (Screen.height - initBoxHeight)/2, initBoxWidth, initBoxHeight);
@@ -56,6 +81,9 @@ private enum mode {
 		int initArrowHeight = (int)(28 * scale);
 		initArrowRect = new Rect((int)(initBoxRect.x + scale * 26f), initBoxRect.y + arrowOffset, initArrowWidth, initArrowHeight);
 		initArrowTexCoords = new Rect(45f/512f, 1f - (349f+28f)/512f, 30f/512f, 28f/512f);
+		int logoWidth = (int)(pointCloudLogo.width * highres_scale);
+		int logoHeight = (int)(pointCloudLogo.height * highres_scale);
+		logoRect = new Rect(scale * 4f, Screen.height - ButtonHeight - logoHeight - 4f, logoWidth, logoHeight);
 		guiArea = new Rect(0, Screen.height * (1f - buttonHeightNormalized), Screen.width, Screen.height * buttonHeightNormalized);
 		ButtonHeight = Screen.height * buttonHeightNormalized;
 		
@@ -121,7 +149,25 @@ private enum mode {
 	}
 	
 	void OnGUI()
-	{		
+	{	
+		if (screenRatio == 0.0f) {
+			screenRatio = (float)Screen.width / (float)Screen.height;
+		}
+		
+		if (toggle3dStereoVision) {
+			if (Application.isEditor) {
+				GUI.DrawTextureWithTexCoords(new Rect(0, 0, Screen.width / 2, Screen.height), renderTextureLeftEye, new Rect(0, 0, 0.5f * screenRatio, 1.0f));
+				GUI.DrawTextureWithTexCoords(new Rect(Screen.width / 2, 0, Screen.width / 2, Screen.height), renderTextureLeftEye, new Rect(0, 0, 0.5f * screenRatio, 1.0f));
+			} else {
+				Rect left = useHasbroMy3D ? new Rect(0, 0, Screen.width * leftViewPort.width, Screen.height) : new Rect(0, 0, Screen.width / 2, Screen.height);
+				Rect right = useHasbroMy3D ? new Rect(Screen.width * rightViewPort.x, 0,Screen.width * rightViewPort.width, Screen.height) : new Rect(Screen.width / 2, 0, Screen.width / 2, Screen.height);
+				GUI.DrawTextureWithTexCoords(left, renderTextureLeftEye, new Rect(0, 0, 0.5f, 1.0f));
+				GUI.DrawTextureWithTexCoords(right, renderTextureLeftEye, new Rect(0, 0, 0.5f, 1.0f));
+			}	
+		} else {
+			GUI.DrawTexture(new Rect(0 , 0, Screen.width, Screen.height), renderTextureLeftEye);
+		}
+		
 		if (GUI.Button (new Rect (10, 10, 30, 20), "")) {
 			showGUI = !showGUI;
 		}
@@ -164,12 +210,12 @@ private enum mode {
 			GUI.Label (new Rect (10, 70, 200, 20), "Scale: " + SceneTransform.Instance.scale);
 			
 			// Wrap everything in the designated GUI Area
-			GUILayout.BeginArea (new Rect (Screen.width - 300 - 10, 10, 300, 300));
+			GUILayout.BeginArea (new Rect (Screen.width - 320 - 10, 10, 320, 300));
 			
 			GUILayout.BeginVertical ();
 			
 			GUILayout.Label ("Position sensitivity: " + SceneTransform.Instance.positionSensitivity);
-			SceneTransform.Instance.positionSensitivity = GUILayout.HorizontalSlider (SceneTransform.Instance.positionSensitivity, 1.0f, 50.0f);
+			SceneTransform.Instance.positionSensitivity = GUILayout.HorizontalSlider (SceneTransform.Instance.positionSensitivity, 0.01f, 1.0f);
 			
 			GUILayout.BeginHorizontal ();
 			if (GUILayout.RepeatButton ("p.x (+)")) {
@@ -226,7 +272,7 @@ private enum mode {
 				SceneTransform.Instance.position = Vector3.zero;
 				SceneTransform.Instance.rotation = Vector3.zero;
 				SceneTransform.Instance.scale = 1.0f;
-				SceneTransform.Instance.positionSensitivity = 10.0f;
+				SceneTransform.Instance.positionSensitivity = 0.01f;
 			}
 			
 			GUILayout.Label("Sun Light");
@@ -242,13 +288,12 @@ private enum mode {
 			
 			GUILayout.Label("3D Stero Vision");
 			
-			if (GUILayout.Button("Enable 3D Stero Vision")) {
-				AnaglyphizerC.Instance.enabled = true;	
-			}
+			toggle3dStereoVision = GUILayout.Toggle(toggle3dStereoVision, " Enable 3D Stero Vision");
 			
 			GUILayout.EndVertical ();
 			
 			GUILayout.EndArea ();	
 		}
 	}
+
 }
