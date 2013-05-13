@@ -175,20 +175,21 @@ public class UserInterface : MonoBehaviour {
 		if (showGUI) {
 			GUILayout.BeginArea(guiArea);
 			GUILayout.BeginHorizontal();
-			if (GUILayout.Button (recordButtonLabel, GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3))) {
-				if (recordButtonLabel == "Record")
-				{
-					Kamcord.StartRecording();
-					recordButtonLabel = "Stop";
-				}
-				else
-				{
-					Kamcord.StopRecording();
-					Kamcord.ShowView();
-					recordButtonLabel = "Record";
-				}
-			}
-			else if (GUILayout.Button("Reset", GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3)))
+//			if (GUILayout.Button (recordButtonLabel, GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3))) {
+//				if (recordButtonLabel == "Record")
+//				{
+//					Kamcord.StartRecording();
+//					recordButtonLabel = "Stop";
+//				}
+//				else
+//				{
+//					Kamcord.StopRecording();
+//					Kamcord.ShowView();
+//					recordButtonLabel = "Record";
+//				}
+//			}
+//			else
+			if (GUILayout.Button("Reset", GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3)))
 			{
 				PointCloudBehaviour.Instance.Reset();
 			}
