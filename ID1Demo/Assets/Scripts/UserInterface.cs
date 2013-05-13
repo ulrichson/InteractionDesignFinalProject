@@ -157,12 +157,12 @@ public class UserInterface : MonoBehaviour {
 		if (toggle3dStereoVision) {
 			if (Application.isEditor) {
 				GUI.DrawTextureWithTexCoords(new Rect(0, 0, Screen.width / 2, Screen.height), renderTextureLeftEye, new Rect(0, 0, 0.5f * screenRatio, 1.0f));
-				GUI.DrawTextureWithTexCoords(new Rect(Screen.width / 2, 0, Screen.width / 2, Screen.height), renderTextureLeftEye, new Rect(0, 0, 0.5f * screenRatio, 1.0f));
+				GUI.DrawTextureWithTexCoords(new Rect(Screen.width / 2, 0, Screen.width / 2, Screen.height), renderTextureRightEye, new Rect(0, 0, 0.5f * screenRatio, 1.0f));
 			} else {
 				Rect left = useHasbroMy3D ? new Rect(0, 0, Screen.width * leftViewPort.width, Screen.height) : new Rect(0, 0, Screen.width / 2, Screen.height);
 				Rect right = useHasbroMy3D ? new Rect(Screen.width * rightViewPort.x, 0,Screen.width * rightViewPort.width, Screen.height) : new Rect(Screen.width / 2, 0, Screen.width / 2, Screen.height);
 				GUI.DrawTextureWithTexCoords(left, renderTextureLeftEye, new Rect(0, 0, 0.5f, 1.0f));
-				GUI.DrawTextureWithTexCoords(right, renderTextureLeftEye, new Rect(0, 0, 0.5f, 1.0f));
+				GUI.DrawTextureWithTexCoords(right, renderTextureRightEye, new Rect(0, 0, 0.5f, 1.0f));
 			}	
 		} else {
 			GUI.DrawTexture(new Rect(0 , 0, Screen.width, Screen.height), renderTextureLeftEye);

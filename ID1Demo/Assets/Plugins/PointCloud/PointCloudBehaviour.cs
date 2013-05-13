@@ -2,248 +2,315 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class PointCloudBehaviour : MonoBehaviour {
+public class PointCloudBehaviour : MonoBehaviour
+{
+	
+	public class S3DV
+	{
+		internal static	float eyeDistance = 0.02f;
+		internal static	float focalDistance = 10.0f;
+	};
 	
 	static public PointCloudBehaviour Instance; // singleton instance
 	
 	public bool drawPoints = true;
 	public float sceneScale = 1f;
-	public List<PointCloudImageTarget> imageTargets = new List<PointCloudImageTarget>();
+	public List<PointCloudImageTarget> imageTargets = new List<PointCloudImageTarget> ();
+	public bool use3DSteroVision = true;
+	public RenderTexture renderTextureLeftEye;
+	public RenderTexture renderTextureRightEye;
 	
 	// Cooridnate transform
-	private Matrix4x4 convert = new Matrix4x4();
+	private Matrix4x4 convert = new Matrix4x4 ();
 	private Matrix4x4 pixelTransform;
 	
 	// Texture
-    private Texture2D videoTexture;
+	private Texture2D videoTexture;
 	private int videoTextureID; // Native texture ID.
 	
 	private Rect screenRect;
 	private Rect videoTextureCoordinates;
-
 	private int textureSize;
 	private float textureSizeInv;
 	private Matrix4x4 frustum, cam;
 	private bool pointcloudRequestedInitialization = false;
 	
 	static public pointcloud_state PreviousState { get; private set; }
+
 	static public pointcloud_state State { get; private set; }
-	static List<PointCloudSceneRoot> sceneRoots = new List<PointCloudSceneRoot>();
+
+	static List<PointCloudSceneRoot> sceneRoots = new List<PointCloudSceneRoot> ();
 	
-	public static bool HasTracking() {
+//	private GameObject leftCamera;
+//	private GameObject rightCamera;
+	
+	// WORKAROUND: it seems that it is not trivial to Update to RenderTextures in one Update() call, therefore it will be switches from left/right each frame.
+	private bool toggleRenderTexture = false;
+	
+	public static bool HasTracking ()
+	{
 		return State == pointcloud_state.POINTCLOUD_TRACKING_IMAGES ||
 			   State == pointcloud_state.POINTCLOUD_TRACKING_SLAM_MAP;
 	}
 	
-	public static bool HasInitialized() {
+	public static bool HasInitialized ()
+	{
 		return State == pointcloud_state.POINTCLOUD_RELOCALIZING ||
-			   HasTracking();
+			   HasTracking ();
 	}
 	
-	void Awake() {
-		if(Instance) {
-			LogError("Only one instance of PointCloudBehaviour allowed!");
+	void Awake ()
+	{
+		if (Instance) {
+			LogError ("Only one instance of PointCloudBehaviour allowed!");
 		}
 		Instance = this;
-		Application.targetFrameRate = 30;
+		Application.targetFrameRate = 60;
 	}
 	
-	void Start()
+	void Start ()
 	{	
-		if (PointCloudAppKey.AppKey == "")
-		{
-			LogError("No PointCloud Application Key provided!");
+		if (PointCloudAppKey.AppKey == "") {
+			LogError ("No PointCloud Application Key provided!");
 		}
 		
-		convert.SetRow(0, new Vector4(0,-1,0,0));
-		convert.SetRow(1, new Vector4(-1,0,0,0));
-		convert.SetRow(2, new Vector4(0,0,-1,0));
-		convert.SetRow(3, new Vector4(0,0,0,1));
+		convert.SetRow (0, new Vector4 (0, -1, 0, 0));
+		convert.SetRow (1, new Vector4 (-1, 0, 0, 0));
+		convert.SetRow (2, new Vector4 (0, 0, -1, 0));
+		convert.SetRow (3, new Vector4 (0, 0, 0, 1));
 		
 		pixelTransform = Matrix4x4.identity;
 	
-		pixelTransform[0,0] = 0;
-		pixelTransform[0,1] = 1;
-		pixelTransform[1,0] = 1;
-		pixelTransform[1,1] = 0;
+		pixelTransform [0, 0] = 0;
+		pixelTransform [0, 1] = 1;
+		pixelTransform [1, 0] = 1;
+		pixelTransform [1, 1] = 0;
 		
-		screenRect = new Rect(0, 0, Screen.height, Screen.width);
+		screenRect = new Rect (0, 0, Screen.height, Screen.width);
 		
-		Initialize();	
+		Initialize ();
+		
+//		if (use3DSteroVision) {
+//			string name = "" + gameObject.name;
+//			gameObject.name = name + " (left)";
+//			leftCamera = gameObject;
+//			rightCamera = new GameObject (name + " (right)", typeof(Camera));
+//			rightCamera.camera.CopyFrom (camera);
+//			rightCamera.AddComponent<GUILayer> ();
+//			rightCamera.transform.parent = transform;
+//			
+//			leftCamera.camera.targetTexture = renderTextureLeftEye;
+//			rightCamera.camera.targetTexture = renderTextureRightEye;
+//			
+//			UpdateCameras();
+//		}
 	}
 	
-	void Initialize()
+//	void UpdateCameras() {
+//		leftCamera.transform.position = transform.position + transform.TransformDirection (-S3DV.eyeDistance, 0f, 0f);
+//		rightCamera.transform.position = transform.position + transform.TransformDirection (S3DV.eyeDistance, 0f, 0f);
+//		leftCamera.transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
+//		rightCamera.transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
+//	}
+	
+	void Initialize ()
 	{	
-		int bigDim = Mathf.Max(Screen.width, Screen.height);
-		int smallDim = Mathf.Min(Screen.width, Screen.height);
-		pointcloudRequestedInitialization = PointCloudAdapter.init(smallDim, bigDim, PointCloudAppKey.AppKey);
+		int bigDim = Mathf.Max (Screen.width, Screen.height);
+		int smallDim = Mathf.Min (Screen.width, Screen.height);
+		pointcloudRequestedInitialization = PointCloudAdapter.init (smallDim, bigDim, PointCloudAppKey.AppKey);
 		
-		if (!pointcloudRequestedInitialization)
-		{
+		if (!pointcloudRequestedInitialization) {
 			// When running from editor, initialize scene imediatly
 			State = pointcloud_state.POINTCLOUD_TRACKING_SLAM_MAP;	
 		}
-		NotifyStateChange(); // Make a notify with the POINTCLOUD_NOT_CREATED state.
+		NotifyStateChange (); // Make a notify with the POINTCLOUD_NOT_CREATED state.
 	}
 	
-	void InitializeTexture() {
-		int videoWidth = PointCloudAdapter.pointcloud_get_video_width();
-		int videoHeight = PointCloudAdapter.pointcloud_get_video_height();
-		float videoCropX = PointCloudAdapter.pointcloud_get_video_crop_x();
-		float videoCropY = PointCloudAdapter.pointcloud_get_video_crop_y();
+	void InitializeTexture ()
+	{
+		int videoWidth = PointCloudAdapter.pointcloud_get_video_width ();
+		int videoHeight = PointCloudAdapter.pointcloud_get_video_height ();
+		float videoCropX = PointCloudAdapter.pointcloud_get_video_crop_x ();
+		float videoCropY = PointCloudAdapter.pointcloud_get_video_crop_y ();
 		
-		int bigDim = Mathf.Max(videoWidth, videoHeight);
+		int bigDim = Mathf.Max (videoWidth, videoHeight);
 		
-		textureSize = GetPowerOfTwo(bigDim);
-		textureSizeInv = 1.0f/textureSize;
+		textureSize = GetPowerOfTwo (bigDim);
+		textureSizeInv = 1.0f / textureSize;
 		
 		float cx = videoCropX / textureSize;
 		float cy = videoCropY / textureSize;
 
 		videoTexture = new Texture2D (textureSize, textureSize, TextureFormat.BGRA32, false);	
-		videoTextureID = videoTexture.GetNativeTextureID();
+		videoTextureID = videoTexture.GetNativeTextureID ();
 		
-		videoTextureCoordinates = new Rect(videoWidth * textureSizeInv - cx,
+		videoTextureCoordinates = new Rect (videoWidth * textureSizeInv - cx,
 			                               cy,
 			                               -videoWidth * textureSizeInv + 2 * cx,
 			                               videoHeight * textureSizeInv - 2 * cy);
 	}
 	
-	void AddImageTargets() {
-		foreach(PointCloudImageTarget imageTarget in imageTargets) {
-			PointCloudAdapter.pointcloud_add_image_target(imageTarget);
+	void AddImageTargets ()
+	{
+		foreach (PointCloudImageTarget imageTarget in imageTargets) {
+			PointCloudAdapter.pointcloud_add_image_target (imageTarget);
 		}
 	}
 	
-	public void Reset()
+	public void Reset ()
 	{
-		if (Application.isEditor)
-		{
+		if (Application.isEditor) {
 			// From editor, simulate reset of point cloud
 			State = pointcloud_state.POINTCLOUD_IDLE;
-			NotifyStateChange();
+			NotifyStateChange ();
 		}
 		
-		PointCloudAdapter.pointcloud_reset();
+		PointCloudAdapter.pointcloud_reset ();
 		
-		Initialize();
+		Initialize ();
 	}
 	
 	// Update is called once per frame
-	void Update () 
+	void Update ()
 	{	
-		if (!pointcloudRequestedInitialization) return;
+		if (!pointcloudRequestedInitialization)
+			return;
 		
-		int flags = PointCloudAdapter.update(videoTextureID, camera.nearClipPlane, camera.farClipPlane, drawPoints, ref cam, ref frustum);
+		int flags = PointCloudAdapter.update (videoTextureID, camera.nearClipPlane, camera.farClipPlane, drawPoints, ref cam, ref frustum);
 		
 		bool texture_updated = (flags & 1) > 0;
 		bool transforms_updated = (flags & 2) > 0;
 		
-		if (!texture_updated && State == pointcloud_state.POINTCLOUD_NOT_CREATED) 
-		{
+		if (!texture_updated && State == pointcloud_state.POINTCLOUD_NOT_CREATED) {
 			// render solid color whlie waiting for camera and pointcloud to start
 			camera.clearFlags = CameraClearFlags.SolidColor;
 			camera.backgroundColor = Color.black;
-		} 
-		else 
-		{
-			if (!videoTexture)
-			{
-				InitializeTexture();
-				AddImageTargets();
+		} else {
+			if (!videoTexture) {
+				InitializeTexture ();
+				AddImageTargets ();
 			}
 			
 			camera.clearFlags = CameraClearFlags.Depth;
 			
-			if (transforms_updated)
-			{
+			if (transforms_updated) {
 				Matrix4x4 camera_matrix = convert * cam;
 				Matrix4x4 camera_pose = camera_matrix.inverse;
 			
-				camera.transform.position = camera_pose.GetColumn(3) / sceneScale;
-				camera.transform.rotation = QuaternionFromMatrixColumns(camera_pose);
+				camera.transform.position = camera_pose.GetColumn (3) / sceneScale;
+				camera.transform.rotation = QuaternionFromMatrixColumns (camera_pose);
 			
 				camera.projectionMatrix = frustum * convert;
 				
-				switch(Screen.orientation)
-				{
-					default:
-					case ScreenOrientation.LandscapeLeft:
-						RotateProjectionMatrix(90);
-						break;
-					case ScreenOrientation.LandscapeRight:
-						RotateProjectionMatrix(-90);
-						break;
-					case ScreenOrientation.Portrait:
-						break;
-					case ScreenOrientation.PortraitUpsideDown:
-						RotateProjectionMatrix(180);
-						break;
-				}
-			}
-			RenderTexture.active = camera.targetTexture;
-			GL.PushMatrix();
-	    	GL.LoadPixelMatrix();
-			switch(Screen.orientation)
-			{
+				switch (Screen.orientation) {
 				default:
 				case ScreenOrientation.LandscapeLeft:
-					screenRect = new Rect(Screen.width, 0, -Screen.width, Screen.height);
+					RotateProjectionMatrix (90);
 					break;
 				case ScreenOrientation.LandscapeRight:
-					screenRect = new Rect(0, Screen.height, Screen.width, -Screen.height);
-					break;
-				case ScreenOrientation.PortraitUpsideDown:
-					GL.MultMatrix(pixelTransform);
-					screenRect = new Rect(Screen.height, Screen.width, -Screen.height, -Screen.width);
+					RotateProjectionMatrix (-90);
 					break;
 				case ScreenOrientation.Portrait:
-					GL.MultMatrix(pixelTransform);
-					screenRect = new Rect(0, 0, Screen.height, Screen.width);
 					break;
+				case ScreenOrientation.PortraitUpsideDown:
+					RotateProjectionMatrix (180);
+					break;
+				}
 			}
-			Graphics.DrawTexture(screenRect, videoTexture, videoTextureCoordinates, 0, 0, 0, 0);
-			GL.PopMatrix();
-			RenderTexture.active = null;
+			
+			if (use3DSteroVision) {
+				toggleRenderTexture = !toggleRenderTexture;
+				// Vector3 origPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+				// Quaternion origRotation = new Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w);
+			
+				if (toggleRenderTexture) {
+					// transform.Translate(Vector3.up * S3DV.eyeDistance);
+					// transform.position = transform.position + transform.TransformDirection (-S3DV.eyeDistance, 0f, 0f);
+					// transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
+				} else {
+					// transform.Translate(Vector3.down * S3DV.eyeDistance);
+					// transform.position = transform.position + transform.TransformDirection (S3DV.eyeDistance, 0f, 0f);
+					// transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
+				}
+				
+				RenderToTexture (toggleRenderTexture ? renderTextureLeftEye : renderTextureRightEye);
+				
+				// transform.position = origPosition;
+				// transform.rotation = origRotation;
+			} else {
+				RenderToTexture (renderTextureLeftEye);	
+			}
 		}
 		
-		MonitorStateChanges();
-	}	
-
-	static Quaternion QuaternionFromMatrixColumns(Matrix4x4 m) {
-		return Quaternion.LookRotation(-m.GetColumn(2), m.GetColumn(1)); // forward, up
+//		if (use3DSteroVision) {
+//			UpdateCameras();
+//		}
+		
+		MonitorStateChanges ();
 	}
 	
-	void MonitorStateChanges()
+	void RenderToTexture (RenderTexture rt)
 	{
-		pointcloud_state newState = PointCloudAdapter.pointcloud_get_state();
-		if (newState != State)
-		{
+		camera.targetTexture = rt;
+		RenderTexture.active = camera.targetTexture;
+		GL.PushMatrix ();
+		GL.LoadPixelMatrix ();
+		switch (Screen.orientation) {
+		default:
+		case ScreenOrientation.LandscapeLeft:
+			screenRect = new Rect (Screen.width, 0, -Screen.width, Screen.height);
+			break;
+		case ScreenOrientation.LandscapeRight:
+			screenRect = new Rect (0, Screen.height, Screen.width, -Screen.height);
+			break;
+		case ScreenOrientation.PortraitUpsideDown:
+			GL.MultMatrix (pixelTransform);
+			screenRect = new Rect (Screen.height, Screen.width, -Screen.height, -Screen.width);
+			break;
+		case ScreenOrientation.Portrait:
+			GL.MultMatrix (pixelTransform);
+			screenRect = new Rect (0, 0, Screen.height, Screen.width);
+			break;
+		}
+		Graphics.DrawTexture (screenRect, videoTexture, videoTextureCoordinates, 0, 0, 0, 0);
+		GL.PopMatrix ();
+		RenderTexture.active = null;
+	}
+
+	static Quaternion QuaternionFromMatrixColumns (Matrix4x4 m)
+	{
+		return Quaternion.LookRotation (-m.GetColumn (2), m.GetColumn (1)); // forward, up
+	}
+	
+	void MonitorStateChanges ()
+	{
+		pointcloud_state newState = PointCloudAdapter.pointcloud_get_state ();
+		if (newState != State) {
 			PreviousState = State;
 			State = newState;
-			NotifyStateChange();
+			NotifyStateChange ();
 		}
 	}
 	
-	void NotifyStateChange()
+	void NotifyStateChange ()
 	{
-		foreach(PointCloudSceneRoot sceneRoot in sceneRoots)
-		{
-			sceneRoot.gameObject.SendMessage("OnPointCloudStateChanged", SendMessageOptions.DontRequireReceiver);
+		foreach (PointCloudSceneRoot sceneRoot in sceneRoots) {
+			sceneRoot.gameObject.SendMessage ("OnPointCloudStateChanged", SendMessageOptions.DontRequireReceiver);
 		}
 	}
 	
-	void OnDestroy()
+	void OnDestroy ()
 	{
-		PointCloudAdapter.pointcloud_destroy();
+		PointCloudAdapter.pointcloud_destroy ();
 	}
 	
-	public static void AddSceneRoot(PointCloudSceneRoot sceneRoot)
+	public static void AddSceneRoot (PointCloudSceneRoot sceneRoot)
 	{
-		sceneRoots.Add(sceneRoot);
+		sceneRoots.Add (sceneRoot);
 	}
 
-	private int GetPowerOfTwo(int pow2) {
+	private int GetPowerOfTwo (int pow2)
+	{
 		pow2--;
 		pow2 |= pow2 >> 1;
 		pow2 |= pow2 >> 2;
@@ -255,26 +322,30 @@ public class PointCloudBehaviour : MonoBehaviour {
 		return pow2;
 	}
 	
-	private void LogError(string msg) {
-		Debug.LogError(msg);
-		Application.Quit();
+	private void LogError (string msg)
+	{
+		Debug.LogError (msg);
+		Application.Quit ();
 	}
 	
-	private void RotateProjectionMatrix(float angleDegrees) {
-		Quaternion correction_q = Quaternion.AngleAxis(angleDegrees, new Vector3(0, 0, 1));
-		Matrix4x4 correction_rot = Matrix4x4.TRS(Vector3.zero, correction_q, new Vector3(1, 1, 1));
+	private void RotateProjectionMatrix (float angleDegrees)
+	{
+		Quaternion correction_q = Quaternion.AngleAxis (angleDegrees, new Vector3 (0, 0, 1));
+		Matrix4x4 correction_rot = Matrix4x4.TRS (Vector3.zero, correction_q, new Vector3 (1, 1, 1));
 		camera.projectionMatrix = correction_rot * camera.projectionMatrix;
 	}
 	
-	public static void ActivateAllImageTargets() {
-		foreach(PointCloudImageTarget target in Instance.imageTargets) {
-			target.Activate();
+	public static void ActivateAllImageTargets ()
+	{
+		foreach (PointCloudImageTarget target in Instance.imageTargets) {
+			target.Activate ();
 		}
 	}
 	
-	public static void DeactivateAllImageTargets() {
-		foreach(PointCloudImageTarget target in Instance.imageTargets) {
-			target.Deactivate();
+	public static void DeactivateAllImageTargets ()
+	{
+		foreach (PointCloudImageTarget target in Instance.imageTargets) {
+			target.Deactivate ();
 		}
 	}
 }
