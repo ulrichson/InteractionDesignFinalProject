@@ -189,11 +189,11 @@ public class UserInterface : MonoBehaviour {
 //				}
 //			}
 //			else
-			if (GUILayout.Button("Reset", GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3)))
+			if (GUILayout.Button("Reset", GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/2)))
 			{
 				PointCloudBehaviour.Instance.Reset();
 			}
-			else if (GUILayout.Button(modeButtonLabel, GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/3)))
+			else if (GUILayout.Button(modeButtonLabel, GUILayout.MinHeight(ButtonHeight), GUILayout.MaxWidth(Screen.width/2)))
 			{
 				NextMode();
 			}

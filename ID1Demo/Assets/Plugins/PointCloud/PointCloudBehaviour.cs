@@ -192,7 +192,7 @@ public class PointCloudBehaviour : MonoBehaviour
 			}
 			
 			camera.clearFlags = CameraClearFlags.Depth;
-			
+			// camera.clearFlags = CameraClearFlags.Color;
 			if (transforms_updated) {
 				Matrix4x4 camera_matrix = convert * cam;
 				Matrix4x4 camera_pose = camera_matrix.inverse;
