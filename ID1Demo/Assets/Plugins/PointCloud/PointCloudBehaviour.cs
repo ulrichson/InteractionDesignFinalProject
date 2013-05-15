@@ -8,7 +8,7 @@ public class PointCloudBehaviour : MonoBehaviour
 	public class S3DV
 	{
 		internal static	float eyeDistance = 0.02f;
-		internal static	float focalDistance = 10.0f;
+		internal static	float focalDistance = 100.0f;
 	};
 	
 	static public PointCloudBehaviour Instance; // singleton instance
@@ -220,39 +220,30 @@ public class PointCloudBehaviour : MonoBehaviour
 			
 			if (use3DSteroVision) {
 				toggleRenderTexture = !toggleRenderTexture;
-				// Vector3 origPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-				// Quaternion origRotation = new Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w);
-			
+				// Vector3 focalPoint = transform.position + transform.forward * S3DV.focalDistance; 
 				if (toggleRenderTexture) {
-					// transform.Translate(Vector3.up * S3DV.eyeDistance);
-					// transform.position = transform.position + transform.TransformDirection (-S3DV.eyeDistance, 0f, 0f);
-					// transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
+					transform.Translate(Vector3.up * S3DV.eyeDistance);
+					// transform.LookAt(focalPoint);
 				} else {
-					// transform.Translate(Vector3.down * S3DV.eyeDistance);
-					// transform.position = transform.position + transform.TransformDirection (S3DV.eyeDistance, 0f, 0f);
-					// transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
+					transform.Translate(Vector3.down * S3DV.eyeDistance);
+					// transform.LookAt(focalPoint);
 				}
 				
 				RenderToTexture (toggleRenderTexture ? renderTextureLeftEye : renderTextureRightEye);
-				
-				// transform.position = origPosition;
-				// transform.rotation = origRotation;
 			} else {
-				RenderToTexture (renderTextureLeftEye);	
+				RenderToTexture (null);	
 			}
 		}
-		
-//		if (use3DSteroVision) {
-//			UpdateCameras();
-//		}
 		
 		MonitorStateChanges ();
 	}
 	
 	void RenderToTexture (RenderTexture rt)
 	{
-		camera.targetTexture = rt;
-		RenderTexture.active = camera.targetTexture;
+		if (rt != null) {
+			camera.targetTexture = rt;
+			RenderTexture.active = camera.targetTexture;
+		}
 		GL.PushMatrix ();
 		GL.LoadPixelMatrix ();
 		switch (Screen.orientation) {
@@ -274,7 +265,9 @@ public class PointCloudBehaviour : MonoBehaviour
 		}
 		Graphics.DrawTexture (screenRect, videoTexture, videoTextureCoordinates, 0, 0, 0, 0);
 		GL.PopMatrix ();
-		RenderTexture.active = null;
+		if (rt != null) {
+			RenderTexture.active = null;
+		}
 	}
 
 	static Quaternion QuaternionFromMatrixColumns (Matrix4x4 m)
