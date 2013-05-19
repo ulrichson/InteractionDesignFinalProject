@@ -8,7 +8,8 @@ public class UserInterface : MonoBehaviour
 	public RenderTexture renderTextureRightEye;
 	public bool useCustomViewPort = true;
 	public bool showExtendedGUI = true;
-	private bool toggle3dStereoVision = true;
+	public int fontSize = 24;
+//	private bool toggle3dStereoVision = true;
 	public static Rect leftViewPort = new Rect (0.0f, 0.0f, 0.4685f, 1.0f);
 	public static Rect rightViewPort = new Rect (0.529f, 0.0f, 0.4685f, 1.0f);
 	float screenRatio = 0.0f;
@@ -28,12 +29,12 @@ public class UserInterface : MonoBehaviour
 	
 	void DrawExtendedGui ()
 	{		
-		GUI.Label (new Rect (10, 30, 200, 20), "Position: " + SceneTransform.Instance.position);
-		GUI.Label (new Rect (10, 50, 200, 20), "Rotation: " + SceneTransform.Instance.rotation);
-		GUI.Label (new Rect (10, 70, 200, 20), "Scale: " + SceneTransform.Instance.scale);
+		GUI.Label (new Rect (10, 60, 300, 30), "Position: " + SceneTransform.Instance.position);
+		GUI.Label (new Rect (10, 100, 300, 30), "Rotation: " + SceneTransform.Instance.rotation);
+		GUI.Label (new Rect (10, 140, 300, 30), "Scale: " + SceneTransform.Instance.scale);
 		
 		// Wrap everything in the designated GUI Area
-		GUILayout.BeginArea (new Rect (Screen.width - 320 - 10, 10, 320, 300));
+		GUILayout.BeginArea (new Rect (Screen.width - 500 - 10, 10, 500, 600));
 		
 		GUILayout.BeginVertical ();
 		
@@ -98,20 +99,26 @@ public class UserInterface : MonoBehaviour
 			SceneTransform.Instance.positionSensitivity = 0.01f;
 		}
 		
-		GUILayout.Label ("Sun Light");
+//		GUILayout.Label ("Sun Light");
+//		
+//		GUILayout.BeginHorizontal ();
+//		if (GUILayout.RepeatButton ("rotation (+)")) {
+//			SunLight.Instance.sceneOrientation += 1.0f;
+//		}
+//		if (GUILayout.RepeatButton ("rotation (-)")) {
+//			SunLight.Instance.sceneOrientation -= 1.0f;
+//		}
+//		GUILayout.EndHorizontal ();
 		
-		GUILayout.BeginHorizontal ();
-		if (GUILayout.RepeatButton ("rotation (+)")) {
-			SunLight.Instance.sceneOrientation += 1.0f;
+		PointCloudBehaviour.Instance.drawPoints = GUILayout.Toggle (PointCloudBehaviour.Instance.drawPoints, " Draw Points on Image Target");
+		
+		GUILayout.Label ("Render parameters");
+		PointCloudBehaviour.Instance.useSplitView = GUILayout.Toggle (PointCloudBehaviour.Instance.useSplitView, " Use Split View");
+		if (PointCloudBehaviour.Instance.useSplitView) {
+		
+			// toggle3dStereoVision = GUILayout.Toggle (toggle3dStereoVision, " Enable 3D Stero Vision");
+			PointCloudBehaviour.Instance.render3dStereoVision = GUILayout.Toggle (PointCloudBehaviour.Instance.render3dStereoVision, " Render 3D Stereo Vision");
 		}
-		if (GUILayout.RepeatButton ("rotation (-)")) {
-			SunLight.Instance.sceneOrientation -= 1.0f;
-		}
-		GUILayout.EndHorizontal ();
-		
-		GUILayout.Label ("3D Stero Vision");
-		
-		toggle3dStereoVision = GUILayout.Toggle (toggle3dStereoVision, " Enable 3D Stero Vision");
 		
 		GUILayout.EndVertical ();
 		
@@ -120,22 +127,25 @@ public class UserInterface : MonoBehaviour
 	
 	void OnGUI ()
 	{	
+		GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = GUI.skin.toggle.fontSize = fontSize;
 		if (screenRatio == 0.0f) {
 			screenRatio = (float)Screen.width / (float)Screen.height;
 		}
 		
-		if (toggle3dStereoVision) {
-			if (Application.isEditor) {
-				GUI.DrawTextureWithTexCoords (new Rect (0, 0, Screen.width / 2, Screen.height), renderTextureLeftEye, new Rect (0, 0, 0.5f * screenRatio, 1.0f));
-				GUI.DrawTextureWithTexCoords (new Rect (Screen.width / 2, 0, Screen.width / 2, Screen.height), renderTextureRightEye, new Rect (0, 0, 0.5f * screenRatio, 1.0f));
+		if (PointCloudBehaviour.Instance.useSplitView) {
+			if (PointCloudBehaviour.Instance.useSplitView) {
+				if (Application.isEditor) {
+					GUI.DrawTextureWithTexCoords (new Rect (0, 0, Screen.width / 2, Screen.height), renderTextureLeftEye, new Rect (0, 0, 0.5f * screenRatio, 1.0f));
+					GUI.DrawTextureWithTexCoords (new Rect (Screen.width / 2, 0, Screen.width / 2, Screen.height), renderTextureRightEye, new Rect (0, 0, 0.5f * screenRatio, 1.0f));
+				} else {
+					Rect left = useCustomViewPort ? new Rect (0, 0, Screen.width * leftViewPort.width, Screen.height) : new Rect (0, 0, Screen.width / 2, Screen.height);
+					Rect right = useCustomViewPort ? new Rect (Screen.width * rightViewPort.x, 0, Screen.width * rightViewPort.width, Screen.height) : new Rect (Screen.width / 2, 0, Screen.width / 2, Screen.height);
+					GUI.DrawTextureWithTexCoords (left, renderTextureLeftEye, new Rect ( (1-0f - leftViewPort.width) / 2, 0, leftViewPort.width, 1.0f));
+					GUI.DrawTextureWithTexCoords (right, renderTextureRightEye, new Rect ( (1.0f - rightViewPort.width) / 2, 0, rightViewPort.width, 1.0f));
+				}	
 			} else {
-				Rect left = useCustomViewPort ? new Rect (0, 0, Screen.width * leftViewPort.width, Screen.height) : new Rect (0, 0, Screen.width / 2, Screen.height);
-				Rect right = useCustomViewPort ? new Rect (Screen.width * rightViewPort.x, 0, Screen.width * rightViewPort.width, Screen.height) : new Rect (Screen.width / 2, 0, Screen.width / 2, Screen.height);
-				GUI.DrawTextureWithTexCoords (left, renderTextureLeftEye, new Rect (0, 0, 0.5f, 1.0f));
-				GUI.DrawTextureWithTexCoords (right, renderTextureRightEye, new Rect (0, 0, 0.5f, 1.0f));
+				GUI.DrawTexture (new Rect (0, 0, Screen.width, Screen.height), renderTextureLeftEye);
 			}	
-		} else {
-			GUI.DrawTexture (new Rect (0, 0, Screen.width, Screen.height), renderTextureLeftEye);
 		}
 		
 		if (GUI.Button (new Rect (10, 10, 40, 40), "")) {

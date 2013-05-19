@@ -32,6 +32,9 @@ public class FeedbackUserInterface : MonoBehaviour {
 				showToastMessage = false;
 			}
 		}
+		
+		// WORKAROUND: PointCloudBehaviour always enables the renderes when image targets are detected
+		SetRenderComponents();
 	}
 	
 	void OnGUI() {
@@ -118,13 +121,9 @@ public class FeedbackUserInterface : MonoBehaviour {
 	
 	void SetRenderComponents() {
 		for (int i = 0; i < objectContainer.transform.childCount; i++) {
-			Renderer rc = objectContainer.transform.GetChild(i).GetComponent<Renderer>();
-			rc.enabled = objIndex == i;
+			// Renderer rc = objectContainer.transform.GetChild(i).GetComponent<Renderer>();
+			// rc.enabled = objIndex == i;
+			objectContainer.transform.GetChild(i).gameObject.SetActive(objIndex == i);
 		}
 	} 
-	
-	void OnPointCloudStateChange ()
-	{
-		SetRenderComponents();
-	}
 }

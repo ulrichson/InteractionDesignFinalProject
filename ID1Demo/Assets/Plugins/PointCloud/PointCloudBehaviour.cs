@@ -2,13 +2,12 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class PointCloudBehaviour : MonoBehaviour
-{
-	
-	public class S3DV
+public class PointCloudBehaviour : MonoBehaviour {
+
+public class S3DV
 	{
 		internal static	float eyeDistance = 0.02f;
-		internal static	float focalDistance = 100.0f;
+		internal static	float focalDistance = 10.0f;
 	};
 	
 	static public PointCloudBehaviour Instance; // singleton instance
@@ -16,9 +15,11 @@ public class PointCloudBehaviour : MonoBehaviour
 	public bool drawPoints = true;
 	public float sceneScale = 1f;
 	public List<PointCloudImageTarget> imageTargets = new List<PointCloudImageTarget> ();
-	public bool use3DSteroVision = true;
+	public bool useSplitView = true;
+	public bool render3dStereoVision = false;
 	public RenderTexture renderTextureLeftEye;
 	public RenderTexture renderTextureRightEye;
+	public bool showFocalPoint = false;
 	
 	// Cooridnate transform
 	private Matrix4x4 convert = new Matrix4x4 ();
@@ -34,6 +35,7 @@ public class PointCloudBehaviour : MonoBehaviour
 	private float textureSizeInv;
 	private Matrix4x4 frustum, cam;
 	private bool pointcloudRequestedInitialization = false;
+	private GameObject focalPoint;
 	
 	static public pointcloud_state PreviousState { get; private set; }
 
@@ -90,28 +92,9 @@ public class PointCloudBehaviour : MonoBehaviour
 		
 		Initialize ();
 		
-//		if (use3DSteroVision) {
-//			string name = "" + gameObject.name;
-//			gameObject.name = name + " (left)";
-//			leftCamera = gameObject;
-//			rightCamera = new GameObject (name + " (right)", typeof(Camera));
-//			rightCamera.camera.CopyFrom (camera);
-//			rightCamera.AddComponent<GUILayer> ();
-//			rightCamera.transform.parent = transform;
-//			
-//			leftCamera.camera.targetTexture = renderTextureLeftEye;
-//			rightCamera.camera.targetTexture = renderTextureRightEye;
-//			
-//			UpdateCameras();
-//		}
+		focalPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+		focalPoint.renderer.enabled = showFocalPoint;
 	}
-	
-//	void UpdateCameras() {
-//		leftCamera.transform.position = transform.position + transform.TransformDirection (-S3DV.eyeDistance, 0f, 0f);
-//		rightCamera.transform.position = transform.position + transform.TransformDirection (S3DV.eyeDistance, 0f, 0f);
-//		leftCamera.transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
-//		rightCamera.transform.LookAt (transform.position + (transform.TransformDirection (Vector3.forward) * S3DV.focalDistance));
-//	}
 	
 	void Initialize ()
 	{	
@@ -173,6 +156,10 @@ public class PointCloudBehaviour : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{	
+		Vector3 focalPointPosition = transform.position + transform.forward * S3DV.focalDistance;
+		focalPoint.transform.position = focalPointPosition;
+		focalPoint.renderer.enabled = showFocalPoint;
+		
 		if (!pointcloudRequestedInitialization)
 			return;
 		
@@ -192,7 +179,7 @@ public class PointCloudBehaviour : MonoBehaviour
 			}
 			
 			camera.clearFlags = CameraClearFlags.Depth;
-			// camera.clearFlags = CameraClearFlags.Color;
+
 			if (transforms_updated) {
 				Matrix4x4 camera_matrix = convert * cam;
 				Matrix4x4 camera_pose = camera_matrix.inverse;
@@ -217,22 +204,21 @@ public class PointCloudBehaviour : MonoBehaviour
 					break;
 				}
 			}
-			
-			if (use3DSteroVision) {
-				toggleRenderTexture = !toggleRenderTexture;
-				// Vector3 focalPoint = transform.position + transform.forward * S3DV.focalDistance; 
+		}
+		
+		if (useSplitView) {
+			toggleRenderTexture = !toggleRenderTexture;
+			if (render3dStereoVision) {	
 				if (toggleRenderTexture) {
-					transform.Translate(Vector3.up * S3DV.eyeDistance);
-					// transform.LookAt(focalPoint);
+					camera.transform.Translate(Vector3.up * S3DV.eyeDistance);
 				} else {
-					transform.Translate(Vector3.down * S3DV.eyeDistance);
-					// transform.LookAt(focalPoint);
+					camera.transform.Translate(Vector3.down * S3DV.eyeDistance);
 				}
-				
-				RenderToTexture (toggleRenderTexture ? renderTextureLeftEye : renderTextureRightEye);
-			} else {
-				RenderToTexture (null);	
+				// camera.transform.LookAt(focalPointPosition);
 			}
+			RenderToTexture (toggleRenderTexture ? renderTextureLeftEye : renderTextureRightEye);
+		} else {
+			RenderToTexture (renderTextureLeftEye);	
 		}
 		
 		MonitorStateChanges ();

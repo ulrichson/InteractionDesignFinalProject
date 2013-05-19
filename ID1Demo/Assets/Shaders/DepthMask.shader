@@ -1,10 +1,18 @@
 Shader "Depth Mask" {
-    SubShader {
-        Tags {"Queue" = "Geometry-10" }
-        Lighting Off
-        ZTest LEqual
-        ZWrite On
-        ColorMask 0
-        Pass {}
-    }
+	SubShader {
+		// Render the mask after regular geometry, but before masked geometry and
+		// transparent things.
+ 
+		Tags {"Queue" = "Geometry+10" }
+ 
+		// Don't draw in the RGBA channels; just the depth buffer
+ 
+		ColorMask 0
+		ZWrite On
+ 
+		// Do nothing specific in the pass:
+ 
+		Pass {}
+	}
+	Fallback "VertexLit", 2
 }
