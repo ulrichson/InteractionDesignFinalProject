@@ -11,7 +11,7 @@ public class FeedbackUserInterface : MonoBehaviour {
 	public GUIStyle toastStyle;
 	public float toastDuration = 2.0f;
 	public int buttonSize = 128;
-	public int margin = 10;
+	public bool drawGui = true;
 	
 	private bool showToastMessage = false;
 	private float timeForToastMessage;
@@ -38,35 +38,40 @@ public class FeedbackUserInterface : MonoBehaviour {
 	}
 	
 	void OnGUI() {
-		// Draw left viewport
-		GUILayout.BeginArea(new Rect(margin, Screen.height - buttonSize - margin, Screen.width * UserInterface.leftViewPort.width - margin, buttonSize + margin));
-		DrawControls();
-		GUILayout.EndArea();
-		
-		// Draw right viewport
-		GUILayout.BeginArea(new Rect(UserInterface.rightViewPort.x * Screen.width + margin, Screen.height - buttonSize - margin, Screen.width * UserInterface.rightViewPort.width - margin, buttonSize + margin));
-		DrawControls();
-		GUILayout.EndArea();
-		
-		if (showToastMessage) {
-			ShowToast("Thanks for your feedback!");
+		if (drawGui) {
+			// Draw left viewport
+			GUILayout.BeginArea(new Rect(0, Screen.height - buttonSize * 2, Screen.width * UserInterface.leftViewPort.width, buttonSize * 2));
+			DrawControls();
+			GUILayout.EndArea();
+			
+			// Draw right viewport
+			GUILayout.BeginArea(new Rect(UserInterface.rightViewPort.x * Screen.width, Screen.height - buttonSize * 2, Screen.width * UserInterface.rightViewPort.width, buttonSize * 2));
+			DrawControls();
+			GUILayout.EndArea();
+			
+			if (showToastMessage) {
+				ShowToast("Thanks for your feedback!");
+			}	
 		}
 	}
 	
 	void DrawControls() {
 		GUILayout.BeginHorizontal();
 		
-		GUILayout.FlexibleSpace();
+		GUILayout.BeginVertical();
 		if (GUILayout.Button(textureThumbsUp, GUILayout.Width(buttonSize), GUILayout.Height(buttonSize)) || GUILayout.Button(textureThumbsDown, GUILayout.Width(buttonSize), GUILayout.Height(buttonSize))) {
 			showToastMessage = true;
 		}
+		GUILayout.EndVertical();
+		GUILayout.FlexibleSpace();
+		GUILayout.BeginVertical();
 		if (GUILayout.Button(texturePrevious, GUILayout.Width(buttonSize), GUILayout.Height(buttonSize))) {
 			SelectPreviousObject();
 		}
 		if (GUILayout.Button(textureNext, GUILayout.Width(buttonSize), GUILayout.Height(buttonSize))) {
 			SelectNextObject();	
 		}
-		GUILayout.FlexibleSpace();
+		GUILayout.EndVertical();
 		
 		GUILayout.EndHorizontal();
 	} 

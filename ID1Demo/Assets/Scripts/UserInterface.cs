@@ -9,13 +9,17 @@ public class UserInterface : MonoBehaviour
 	public bool useCustomViewPort = true;
 	public bool showExtendedGUI = true;
 	public int fontSize = 24;
+	public GameObject sunLight;
 //	private bool toggle3dStereoVision = true;
 	public static Rect leftViewPort = new Rect (0.0f, 0.0f, 0.4685f, 1.0f);
-	public static Rect rightViewPort = new Rect (0.529f, 0.0f, 0.4685f, 1.0f);
+	public static Rect rightViewPort = new Rect (0.5315f, 0.0f, 0.4685f, 1.0f);
 	float screenRatio = 0.0f;
+	
+	private FeedbackUserInterface feedbackUserInterface;
 	
 	void Start ()
 	{
+		feedbackUserInterface = GetComponent<FeedbackUserInterface> ();
 	}
 	
 	void Update ()
@@ -99,25 +103,28 @@ public class UserInterface : MonoBehaviour
 			SceneTransform.Instance.positionSensitivity = 0.01f;
 		}
 		
-//		GUILayout.Label ("Sun Light");
-//		
-//		GUILayout.BeginHorizontal ();
-//		if (GUILayout.RepeatButton ("rotation (+)")) {
-//			SunLight.Instance.sceneOrientation += 1.0f;
-//		}
-//		if (GUILayout.RepeatButton ("rotation (-)")) {
-//			SunLight.Instance.sceneOrientation -= 1.0f;
-//		}
-//		GUILayout.EndHorizontal ();
-		
 		PointCloudBehaviour.Instance.drawPoints = GUILayout.Toggle (PointCloudBehaviour.Instance.drawPoints, " Draw Points on Image Target");
 		
-		GUILayout.Label ("Render parameters");
+		GUILayout.Label ("Render Parameters");
 		PointCloudBehaviour.Instance.useSplitView = GUILayout.Toggle (PointCloudBehaviour.Instance.useSplitView, " Use Split View");
 		if (PointCloudBehaviour.Instance.useSplitView) {
 		
 			// toggle3dStereoVision = GUILayout.Toggle (toggle3dStereoVision, " Enable 3D Stero Vision");
 			PointCloudBehaviour.Instance.render3dStereoVision = GUILayout.Toggle (PointCloudBehaviour.Instance.render3dStereoVision, " Render 3D Stereo Vision");
+		}
+		
+		if (sunLight != null) {			
+			GUILayout.Label("Sun direction: " + sunLight.transform.rotation.eulerAngles.y.ToString("0.00"));
+			sunLight.transform.rotation = Quaternion.Euler(sunLight.transform.rotation.eulerAngles.x, GUILayout.HorizontalSlider(sunLight.transform.rotation.eulerAngles.y, 0.0f, 360.0f), sunLight.transform.rotation.eulerAngles.z);
+				
+			GUILayout.Label("Sun height: " + sunLight.transform.rotation.eulerAngles.x.ToString("0.00"));
+			sunLight.transform.rotation = Quaternion.Euler(GUILayout.HorizontalSlider(sunLight.transform.rotation.eulerAngles.x, 0.0f, 90.0f), sunLight.transform.rotation.eulerAngles.y, sunLight.transform.rotation.eulerAngles.z);
+			
+			Light light = sunLight.GetComponent<Light> ();
+			if (light != null && light.type == LightType.Directional) {
+				GUILayout.Label("Sun strength: " + sunLight.light.shadowStrength.ToString("0.00"));
+				sunLight.light.shadowStrength = GUILayout.HorizontalSlider(sunLight.light.shadowStrength, 0.0f, 1.5f);
+			}
 		}
 		
 		GUILayout.EndVertical ();
@@ -155,7 +162,11 @@ public class UserInterface : MonoBehaviour
 		// GUI.Label (new Rect (10, 10, 400, 30), "PointCloud State: " + PointCloudBehaviour.State);
 		
 		if (showExtendedGUI) {
-			DrawExtendedGui ();	
+			DrawExtendedGui ();
+		}
+		
+		if (feedbackUserInterface) {
+			feedbackUserInterface.drawGui = !showExtendedGUI;
 		}
 	}
 	
