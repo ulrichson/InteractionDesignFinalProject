@@ -5,14 +5,18 @@ using System.Collections.Generic;
 public class PointCloudSceneRoot : MonoBehaviour {
 	
 	public bool hideChildrenIfNoTracking = true;
+	public List<GameObject> ignoreGameObjects = new List<GameObject> ();
 		
 	void Awake()
 	{
 		PointCloudBehaviour.AddSceneRoot(this);
 	}
 	
-	public static void EnableRenderingRecursively(Transform go, bool enable)
+	public static void EnableRenderingRecursively(Transform go, bool enable, List<GameObject> ignoreGameObjects)
 	{
+		if (ignoreGameObjects.Contains(go.gameObject))
+			return;
+		
 		Renderer rendererComponent = go.GetComponent<Renderer>();
 		if (rendererComponent != null)
 		{
@@ -21,7 +25,7 @@ public class PointCloudSceneRoot : MonoBehaviour {
 			
 		foreach(Transform child in go)
 		{
-			EnableRenderingRecursively(child, enable);
+			EnableRenderingRecursively(child, enable, ignoreGameObjects);
 		}
 	}
 	
@@ -29,7 +33,7 @@ public class PointCloudSceneRoot : MonoBehaviour {
 	{
 		if(hideChildrenIfNoTracking) {
 			bool showChildren = PointCloudBehaviour.HasTracking();
-			EnableRenderingRecursively(transform, showChildren);
+			EnableRenderingRecursively(transform, showChildren, ignoreGameObjects);
 		}
 	}
 }
