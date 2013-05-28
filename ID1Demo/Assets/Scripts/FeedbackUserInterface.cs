@@ -54,15 +54,21 @@ public class FeedbackUserInterface : MonoBehaviour
 		
 		if (drawGui) {
 			
-			// Draw left viewport
-			GUILayout.BeginArea (new Rect (0, Screen.height - buttonSize * 2, Screen.width * UserInterface.leftViewPort.width, buttonSize * 2));
-			DrawControls ();
-			GUILayout.EndArea ();
-			
-			// Draw right viewport
-			GUILayout.BeginArea (new Rect (UserInterface.rightViewPort.x * Screen.width, Screen.height - buttonSize * 2, Screen.width * UserInterface.rightViewPort.width, buttonSize * 2));
-			DrawControls ();
-			GUILayout.EndArea ();
+			if (PointCloudBehaviour.Instance.useSplitView) {
+				// Draw left viewport
+				GUILayout.BeginArea (new Rect (0, Screen.height - buttonSize * 2, Screen.width * UserInterface.leftViewPort.width, buttonSize * 2));
+				DrawControls ();
+				GUILayout.EndArea ();
+				
+				// Draw right viewport
+				GUILayout.BeginArea (new Rect (UserInterface.rightViewPort.x * Screen.width, Screen.height - buttonSize * 2, Screen.width * UserInterface.rightViewPort.width, buttonSize * 2));
+				DrawControls ();
+				GUILayout.EndArea ();
+			} else {
+				GUILayout.BeginArea (new Rect (0, Screen.height - buttonSize * 2, Screen.width, buttonSize * 2));
+				DrawControls ();
+				GUILayout.EndArea ();
+			}
 			
 			if (showToastMessage) {
 				ShowToast ("Thanks for your feedback!");
@@ -94,35 +100,51 @@ public class FeedbackUserInterface : MonoBehaviour
 	
 	void ShowToast (string msg)
 	{
-		// Draw left viewport
-		GUILayout.BeginArea (new Rect (0, 0, Screen.width * UserInterface.leftViewPort.width, Screen.height));
-		
-		GUILayout.FlexibleSpace ();
-		GUILayout.BeginHorizontal ();
-		GUILayout.FlexibleSpace ();
-	 
-		GUILayout.Label (msg, toastStyle);
-	 
-		GUILayout.FlexibleSpace ();
-		GUILayout.EndHorizontal ();
-		GUILayout.FlexibleSpace ();
-
-		GUILayout.EndArea ();
-		
-		// Draw right viewport
-		GUILayout.BeginArea (new Rect (Screen.width * UserInterface.rightViewPort.x, 0, Screen.width * UserInterface.rightViewPort.width, Screen.height));
-		
-		GUILayout.FlexibleSpace ();
-		GUILayout.BeginHorizontal ();
-		GUILayout.FlexibleSpace ();
-	 
-		GUILayout.Label (msg, toastStyle);
-	 
-		GUILayout.FlexibleSpace ();
-		GUILayout.EndHorizontal ();
-		GUILayout.FlexibleSpace ();
-		
-		GUILayout.EndArea ();
+		if (PointCloudBehaviour.Instance.useSplitView) {
+			// Draw left viewport
+			GUILayout.BeginArea (new Rect (0, 0, Screen.width * UserInterface.leftViewPort.width, Screen.height));
+			
+			GUILayout.FlexibleSpace ();
+			GUILayout.BeginHorizontal ();
+			GUILayout.FlexibleSpace ();
+		 
+			GUILayout.Label (msg, toastStyle);
+		 
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+			GUILayout.FlexibleSpace ();
+	
+			GUILayout.EndArea ();
+			
+			// Draw right viewport
+			GUILayout.BeginArea (new Rect (Screen.width * UserInterface.rightViewPort.x, 0, Screen.width * UserInterface.rightViewPort.width, Screen.height));
+			
+			GUILayout.FlexibleSpace ();
+			GUILayout.BeginHorizontal ();
+			GUILayout.FlexibleSpace ();
+		 
+			GUILayout.Label (msg, toastStyle);
+		 
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+			GUILayout.FlexibleSpace ();
+			
+			GUILayout.EndArea ();
+		} else {
+			GUILayout.BeginArea (new Rect (0, 0, Screen.width, Screen.height));
+			
+			GUILayout.FlexibleSpace ();
+			GUILayout.BeginHorizontal ();
+			GUILayout.FlexibleSpace ();
+		 
+			GUILayout.Label (msg, toastStyle);
+		 
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+			GUILayout.FlexibleSpace ();
+	
+			GUILayout.EndArea ();
+		}
 	}
 	
 	void SelectNextObject ()
