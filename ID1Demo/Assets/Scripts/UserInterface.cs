@@ -27,6 +27,8 @@ public class UserInterface : MonoBehaviour
 	private float captureDuration = 30.0f;
 	private bool captureVideo = false;
 	
+	private bool forceHideGui = false;
+	
 	void Start ()
 	{
 		feedbackUserInterface = GetComponent<FeedbackUserInterface> ();
@@ -156,6 +158,7 @@ public class UserInterface : MonoBehaviour
 		}
 		
 		PointCloudBehaviour.Instance.drawPoints = GUILayout.Toggle (PointCloudBehaviour.Instance.drawPoints, " Draw Points on Image Target");
+		forceHideGui = GUILayout.Toggle (forceHideGui, " Force to hide GUI");
 		
 		GUILayout.Label ("Render Parameters");
 		PointCloudBehaviour.Instance.useSplitView = GUILayout.Toggle (PointCloudBehaviour.Instance.useSplitView, " Use Split View");
@@ -204,7 +207,7 @@ public class UserInterface : MonoBehaviour
 			}
 		}	
 		
-		if (GUI.Button (new Rect (10, 10, 40, 40), "")) {
+		if (GUI.Button (new Rect (0, 0, 50, 50), "", GUIStyle.none)) {
 			showExtendedGUI = !showExtendedGUI;
 		}
 			
@@ -213,7 +216,11 @@ public class UserInterface : MonoBehaviour
 		}
 		
 		if (feedbackUserInterface) {
-			feedbackUserInterface.drawGui = !showExtendedGUI;
+			if (forceHideGui) {
+				feedbackUserInterface.drawGui = false;
+			} else {
+				feedbackUserInterface.drawGui = !showExtendedGUI;
+			}
 		}
 	}
 	
