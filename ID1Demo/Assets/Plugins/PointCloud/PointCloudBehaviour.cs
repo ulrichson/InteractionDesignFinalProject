@@ -219,6 +219,7 @@ public class S3DV
 			RenderToTexture (toggleRenderTexture ? renderTextureLeftEye : renderTextureRightEye);
 		} else {
 			RenderToTexture (renderTextureLeftEye);	
+			// RenderToTexture (null);
 		}
 		
 		MonitorStateChanges ();

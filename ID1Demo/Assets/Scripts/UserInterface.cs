@@ -16,6 +16,16 @@ public class UserInterface : MonoBehaviour
 	float screenRatio = 0.0f;
 	private string labelVideo = "Capture";
 	private FeedbackUserInterface feedbackUserInterface;
+	public float toastDuration = 2.0f;
+	private bool showToastMessage = false;
+	private float timeForToastMessage;
+	private string toastMessage = "";
+	public GUIStyle toastStyle;
+	
+	
+	private float captureTime = 0.0f;
+	private float captureDuration = 30.0f;
+	private bool captureVideo = false;
 	
 	void Start ()
 	{
@@ -29,6 +39,24 @@ public class UserInterface : MonoBehaviour
 			PointCloudBehaviour.ActivateAllImageTargets ();
 			PointCloudAdapter.pointcloud_enable_map_expansion ();
 		}
+		
+		if (showToastMessage) {
+			timeForToastMessage -= Time.deltaTime;
+			if (timeForToastMessage < 0.0f) {
+				timeForToastMessage = toastDuration;
+				showToastMessage = false;
+			}
+		}
+		
+		if (captureVideo) {
+			captureTime += Time.deltaTime;
+			if (captureTime >= captureDuration) {
+				Kamcord.StopRecording();
+				Kamcord.ShowView();
+				captureTime = 0.0f;
+				captureVideo = false;
+			}
+		}
 	}
 	
 	void DrawExtendedGui ()
@@ -38,17 +66,26 @@ public class UserInterface : MonoBehaviour
 		GUI.Label (new Rect (10, 140, 300, 30), "Scale: " + SceneTransform.Instance.scale);
 		
 		if (GUI.Button (new Rect (10, 180, 200, 100), labelVideo)) {
-			if (labelVideo == "Capture") {
+//			if (labelVideo == "Capture") {
+//				Kamcord.StartRecording ();
+//				labelVideo = "Stop";
+//			} else {
+//				if (!Kamcord.StopRecording ()) {
+//					showToastMessage = true;
+//					toastMessage = "Error while capturing video!";
+//				} else {
+//					Kamcord.ShowView ();
+//				}
+//				
+//				labelVideo = "Capture";
+//			}
+			if (!captureVideo) {
 				Kamcord.StartRecording ();
-				labelVideo = "Stop";
-			} else {
-				Kamcord.StopRecording ();
-				Kamcord.ShowView ();
-				labelVideo = "Capture";
+				captureVideo = true;
 			}
 		}
 		
-		if (Kamcord.IsRecording()) {
+		if (Kamcord.IsRecording ()) {
 			GUI.Label (new Rect (10, 280, 300, 40), "Recording...");
 		} 
 		
@@ -143,6 +180,10 @@ public class UserInterface : MonoBehaviour
 		GUILayout.EndVertical ();
 		
 		GUILayout.EndArea ();
+		
+		if (showToastMessage) {
+			ShowToast (toastMessage);
+		}
 	}
 	
 	void OnGUI ()
@@ -183,5 +224,21 @@ public class UserInterface : MonoBehaviour
 //			PointCloudAdapter.pointcloud_enable_map_expansion ();
 //		}
 //	}
+	
+	void ShowToast (string msg)
+	{
+		GUILayout.BeginArea (new Rect (0, 0, Screen.width, Screen.height));
+		
+		GUILayout.FlexibleSpace ();
+		GUILayout.BeginHorizontal ();
+		GUILayout.FlexibleSpace ();
+	 
+		GUILayout.Label (msg, toastStyle);
+	 
+		GUILayout.FlexibleSpace ();
+		GUILayout.EndHorizontal ();
+		GUILayout.FlexibleSpace ();
 
+		GUILayout.EndArea ();	
+	}
 }
