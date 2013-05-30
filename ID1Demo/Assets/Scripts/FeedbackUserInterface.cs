@@ -54,21 +54,21 @@ public class FeedbackUserInterface : MonoBehaviour
 		
 		if (drawGui) {
 			
-			if (PointCloudBehaviour.Instance.useSplitView) {
-				// Draw left viewport
-				GUILayout.BeginArea (new Rect (0, Screen.height - buttonSize * 2, Screen.width * UserInterface.leftViewPort.width, buttonSize * 2));
-				DrawControls ();
-				GUILayout.EndArea ();
-				
-				// Draw right viewport
-				GUILayout.BeginArea (new Rect (UserInterface.rightViewPort.x * Screen.width, Screen.height - buttonSize * 2, Screen.width * UserInterface.rightViewPort.width, buttonSize * 2));
-				DrawControls ();
-				GUILayout.EndArea ();
-			} else {
+//			if (PointCloudBehaviour.Instance.useSplitView) {
+//				// Draw left viewport
+//				GUILayout.BeginArea (new Rect (0, Screen.height - buttonSize * 2, Screen.width * UserInterface.leftViewPort.width, buttonSize * 2));
+//				DrawControls ();
+//				GUILayout.EndArea ();
+//				
+//				// Draw right viewport
+//				GUILayout.BeginArea (new Rect (UserInterface.rightViewPort.x * Screen.width, Screen.height - buttonSize * 2, Screen.width * UserInterface.rightViewPort.width, buttonSize * 2));
+//				DrawControls ();
+//				GUILayout.EndArea ();
+//			} else {
 				GUILayout.BeginArea (new Rect (0, Screen.height - buttonSize * 2, Screen.width, buttonSize * 2));
 				DrawControls ();
 				GUILayout.EndArea ();
-			}
+//			}
 			
 			if (showToastMessage) {
 				ShowToast ("Thanks for your feedback!");
